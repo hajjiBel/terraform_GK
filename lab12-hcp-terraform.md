@@ -202,17 +202,4 @@ Explorez **States** : l'historique des versions de l'état est conservé et cons
 | `timeout … dial tcp …:22` | `allowed_ssh_cidr` ≠ `*` | voir étape 2 |
 | `Error: Failed to read ssh public key` | un `file("~/.ssh/…")` traîne dans le code | utilisez la clé `tls` (lab 05) |
 
-## 🏆 Défi
 
-Ajoutez dans **Settings → General** une **Terraform version** épinglée, et activez **Auto-apply** sur un workspace de test. Quels risques présente l'auto-apply ?
-
-## ❓ Questions de compréhension
-
-1. Pourquoi faut-il détruire l'infrastructure locale avant de passer sur HCP Terraform ?
-2. Qu'est-ce qu'un plan **spéculatif** ? Peut-il modifier l'infrastructure ?
-3. Différence entre une variable *Terraform* et une variable *Environment* dans un workspace ?
-4. Pourquoi le fichier de clé privée pose-t-il problème sur un runner HCP ?
-
-## 🚀 Pour aller plus loin — sans secret, avec OIDC
-
-Plutôt qu'un `ARM_CLIENT_SECRET`, HCP Terraform peut utiliser des **identifiants dynamiques** (Workload Identity Federation) : *federated credential* sur l'application Entra ID, puis dans le workspace `TFC_AZURE_PROVIDER_AUTH=true` et `TFC_AZURE_RUN_CLIENT_ID=<appId>`. Aucun secret n'est alors stocké.
