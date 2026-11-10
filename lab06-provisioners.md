@@ -144,48 +144,6 @@ curl $(terraform output -raw url)
 
 ---
 
-## Exercice — Provisioning avec une clé fournie et Nginx
-
-Travaillez dans `~/terraform-azure/lab04-exercice`.
-
-1. Générez une paire de clés : `ssh-keygen -t rsa -b 4096 -f mykey -N ""` (ajoutez `mykey*` au `.gitignore`).
-2. Ajoutez dans `variables.tf` : `path_to_private_key` (défaut `"mykey"`), `path_to_public_key` (défaut `"mykey.pub"`), `instance_username` (défaut `"azureuser"`).
-3. Dans la VM, utilisez `file(var.path_to_public_key)` dans `admin_ssh_key`.
-4. Créez `script.sh` :
-
-```bash
-#!/bin/bash
-until [[ -f /var/lib/cloud/instance/boot-finished ]]; do sleep 1; done
-apt-get update
-apt-get -y install nginx
-systemctl enable --now nginx
-```
-
-5. ✏️ **TODO 4** — Écrivez vous-même le bloc `connection` et les deux provisioners (`file` vers `/tmp/script.sh`, puis `remote-exec`). Pensez aux fins de ligne Windows : `sed -i -e 's/\\r$//' /tmp/script.sh`.
-6. Appliquez (la VM existe déjà : que faut-il faire ?), puis ouvrez `http://<IP>`.
-
----
-
-## Pour aller plus loin — `custom_data` (cloud-init)
-
-HashiCorp recommande les provisioners **en dernier recours**. Sur Azure, on passe plutôt le script **au démarrage** :
-
-```hcl
-resource "azurerm_linux_virtual_machine" "web" {
-  # ...
-  custom_data = base64encode(file("${path.root}/assets/setup-web.sh"))
-}
-```
-
-| | 🟧 Provisioners | 🟩 `custom_data` / cloud-init |
-|---|---|---|
-| Connexion SSH depuis Terraform | obligatoire | non |
-| Port 22 ouvert pour Terraform | oui | non |
-| Erreurs visibles dans Terraform | oui | non (`/var/log/cloud-init-output.log`) |
-| Modifier le script | rien ne se passe (sauf `-replace`) | 🟥 `-/+` : `custom_data` force la recréation |
-| Recommandé en production | non | oui |
-
----
 
 ## ✅ Vérification
 
@@ -193,22 +151,9 @@ resource "azurerm_linux_virtual_machine" "web" {
 - [ ] Vous savez expliquer pourquoi l'ajout d'un provisioner ne recrée pas la VM.
 - [ ] Exercice : la page Nginx s'affiche.
 
-## 🧯 Si vous voyez…
-
-| Message | Cause | Solution |
-|---|---|---|
-| `timeout - last error: dial tcp …:22: i/o timeout` | NSG : votre IP a changé | `curl -s ifconfig.me`, mettez à jour `allowed_ssh_cidr` |
-| `ssh: handshake failed: ssh: unable to authenticate` | mauvaise clé dans `connection` | la clé privée doit correspondre à `admin_ssh_key` |
-| `Could not get lock /var/lib/dpkg/lock-frontend` | cloud-init utilise encore apt | gardez `cloud-init status --wait` |
-| `/bin/bash^M: bad interpreter` | script édité sous Windows (CRLF) | `sed -i 's/\r$//'` ou VS Code → LF |
-| Ressource `tainted` après une erreur | le provisioner a échoué | corrigez puis `terraform apply` (recréation) |
-
-## 🏆 Défi
-
-Remplacez les provisioners du fil rouge par `custom_data`. Que montre le plan ? Une fois appliqué, comment vérifier que le script s'est bien exécuté ?
 
 ## ❓ Questions de compréhension
 
 1. Pourquoi `self` est-il obligatoire dans `connection.host` ?
 2. Que devient une VM dont le provisioner échoue ?
-3. Citez deux raisons de préférer `custom_data` aux provisioners.
+
