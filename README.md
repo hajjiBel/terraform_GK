@@ -122,8 +122,13 @@ terraform_GK/
 ├── lab01-installation.md … lab16-vm-dans-vnet.md   ← 📗 les 16 labs à réaliser
 ├── lab17-pipeline-cicd.md      ← 🚀 lab complémentaire : Terraform dans un pipeline CI/CD
 ├── solutions/lab17-pipeline-cicd/   ← ✅ solution du lab 17 (dépôt GitHub type)
+├── corriges/                     ← 📕 corrigés : réponses aux TODO et aux questions, résultats attendus
+├── solutions/                    ← 🧩 code Terraform complet attendu à la fin de chaque lab
 └── scripts/nettoyage.sh          ← 🧹 nettoyage de vos ressources Azure en fin de journée
 ```
+
+> [!NOTE]
+> Les corrections sont sur la branche `corrections` : [`corriges/`](corriges/README.md) pour les réponses, [`solutions/`](solutions/README.md) pour le code complet de chaque lab.
 
 ---
 
