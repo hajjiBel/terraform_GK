@@ -1,0 +1,121 @@
+# Lab 17 — Pipeline Terraform
+#   pull request vers main : CI  -> fmt, init, validate, plan (aucune modification d'Azure)
+#   push sur main          : CI + CD -> plan, puis apply du plan exact (après approbation si configurée)
+
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["infra/**", ".github/workflows/terraform.yml"]
+  push:
+    branches: [main]
+    paths: ["infra/**", ".github/workflows/terraform.yml"]
+  workflow_dispatch: # bouton « Run workflow » dans l'onglet Actions
+
+permissions:
+  contents: read
+
+# Un seul pipeline Terraform à la fois sur cet état (en plus du verrou du backend)
+concurrency:
+  group: terraform-state
+  cancel-in-progress: false
+
+env:
+  # Authentification Azure (principal de service) : valeurs stockées dans les secrets du dépôt
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  # Emplacement de l'état (lab 11) : variables du dépôt, non secrètes
+  TFSTATE_RG: ${{ vars.TFSTATE_RG }}
+  TFSTATE_SA: ${{ vars.TFSTATE_SA }}
+  # Mode non interactif
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+defaults:
+  run:
+    working-directory: infra
+
+jobs:
+  plan:
+    name: "CI — vérifier et planifier"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8" # même version qu'en local
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: terraform init
+        run: >-
+          terraform init
+          -backend-config="resource_group_name=$TFSTATE_RG"
+          -backend-config="storage_account_name=$TFSTATE_SA"
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Publier le plan dans le résumé
+        run: |
+          {
+            echo "## Plan Terraform"
+            echo '```'
+            terraform show -no-color tfplan
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Le plan est transmis au job apply : on applique exactement ce qui a été relu
+      - name: Conserver le plan
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: infra/tfplan
+          retention-days: 1
+
+  apply:
+    name: "CD — appliquer"
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production # Tâche 7 : ajouter une approbation manuelle sur cet environnement
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Récupérer le plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: infra
+
+      - name: terraform init
+        run: >-
+          terraform init
+          -backend-config="resource_group_name=$TFSTATE_RG"
+          -backend-config="storage_account_name=$TFSTATE_SA"
+
+      - name: terraform apply
+        run: terraform apply tfplan # un plan enregistré s'applique sans confirmation
+
+      - name: Afficher l'adresse du site
+        run: |
+          echo "### Site déployé : $(terraform output -raw website_url)" >> "$GITHUB_STEP_SUMMARY"

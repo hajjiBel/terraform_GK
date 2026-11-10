@@ -1,0 +1,55 @@
+# Lab 17 — Tâche 8 : détruire l'infrastructure depuis l'onglet Actions (déclenchement manuel)
+
+name: Terraform destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Tapez "detruire" pour confirmer'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-state
+  cancel-in-progress: false
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  # Emplacement de l'état (lab 11) : variables du dépôt, non secrètes
+  TFSTATE_RG: ${{ vars.TFSTATE_RG }}
+  TFSTATE_SA: ${{ vars.TFSTATE_SA }}
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+defaults:
+  run:
+    working-directory: infra
+
+jobs:
+  destroy:
+    name: "Détruire"
+    if: inputs.confirmation == 'detruire'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: >-
+          terraform init
+          -backend-config="resource_group_name=$TFSTATE_RG"
+          -backend-config="storage_account_name=$TFSTATE_SA"
+
+      - name: terraform destroy
+        run: terraform destroy -auto-approve

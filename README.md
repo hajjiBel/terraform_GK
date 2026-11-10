@@ -5,7 +5,7 @@
 ![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A5%201.9-7c3aed?logo=terraform&logoColor=white)
 ![azurerm](https://img.shields.io/badge/azurerm-~%3E%204.0-0078d4?logo=microsoftazure&logoColor=white)
 ![Azure CLI](https://img.shields.io/badge/Azure%20CLI-%E2%89%A5%202.60-0078d4)
-![Labs](https://img.shields.io/badge/Labs-16-ea580c)
+![Labs](https://img.shields.io/badge/Labs-16_%2B_1-ea580c)
 
 Ce cahier adapte à Azure les 16 labs de la formation Terraform AWS. Les labs **02 à 09** font évoluer **un même projet fil rouge** (un serveur web Linux). Les labs suivants abordent l'état distant, HCP Terraform, les templates, le multi‑provider et un réseau complet.
 
@@ -81,6 +81,12 @@ flowchart LR
 | 15:20 – 16:00 | 🟩 VM dans le VNet | [Lab 16](lab16-vm-dans-vnet.md) | 40 min |
 | 16:00 – 17:00 | 🏁 Bilan, quiz, **nettoyage général** ([`scripts/nettoyage.sh`](scripts/nettoyage.sh)) | — | — |
 
+### 🚀 Lab complémentaire — Terraform en CI/CD
+
+| Séquence | Lab | Durée |
+|---|---|---|
+| 🟪 Terraform dans un pipeline DevOps (GitHub Actions) : PR → plan, merge → apply, approbation | [Lab 17](lab17-pipeline-cicd.md) · [solution](solutions/lab17-pipeline-cicd/) | 60 – 75 min |
+
 ---
 
 ## 🧭 Vue d'ensemble du parcours
@@ -114,6 +120,8 @@ flowchart LR
 terraform_GK/
 ├── README.md                     ← vous êtes ici
 ├── lab01-installation.md … lab16-vm-dans-vnet.md   ← 📗 les 16 labs à réaliser
+├── lab17-pipeline-cicd.md      ← 🚀 lab complémentaire : Terraform dans un pipeline CI/CD
+├── solutions/lab17-pipeline-cicd/   ← ✅ solution du lab 17 (dépôt GitHub type)
 └── scripts/nettoyage.sh          ← 🧹 nettoyage de vos ressources Azure en fin de journée
 ```
 
